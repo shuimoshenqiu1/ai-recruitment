@@ -4,10 +4,40 @@
 这些提供商均兼容OpenAI API协议，只需不同的endpoint和api_key。
 """
 
-import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential
+from __future__ import annotations
 
-from app.llm.base import LLMProvider, LLMResponse, Message
+import logging
+
+import httpx
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+from app.llm.base import (
+    LLMAuthenticationError,
+    LLMError,
+    LLMProvider,
+    LLMRateLimitError,
+    LLMResponse,
+    LLMTimeoutError,
+    Message,
+)
+
+logger = logging.getLogger(__name__)
+
+
+def _should_retry(exc: BaseException) -> bool:
+    """判断异常是否应该重试"""
+    if isinstance(exc, LLMTimeoutError):
+        return True
+    if isinstance(exc, LLMRateLimitError):
+        return True
+    if isinstance(exc, httpx.TimeoutException):
+        return True
+    return False
 
 
 class OpenAICompatibleProvider(LLMProvider):
@@ -21,7 +51,71 @@ class OpenAICompatibleProvider(LLMProvider):
     - Zhipu: https://open.bigmodel.cn/api/paas/v4
     """
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    def __init__(self, endpoint: str, api_key: str | None, model_name: str, **kwargs):
+        super().__init__(endpoint=endpoint, api_key=api_key, model_name=model_name, **kwargs)
+        self._timeout = kwargs.get("timeout", 60.0)
+        self._client = httpx.AsyncClient(
+            timeout=httpx.Timeout(self._timeout, connect=10.0),
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+        )
+
+    async def close(self) -> None:
+        """关闭共享的httpx连接池"""
+        if self._client:
+            await self._client.aclose()
+
+    def __del__(self):
+        # 安全关闭：如果事件循环仍在运行则忽略
+        if hasattr(self, "_client") and self._client and not self._client.is_closed:
+            try:
+                import asyncio
+                loop = asyncio.get_running_loop()
+                loop.create_task(self._client.aclose())
+            except RuntimeError:
+                pass
+
+    def _handle_http_error(self, response: httpx.Response) -> None:
+        """根据HTTP状态码抛出对应的异常"""
+        status = response.status_code
+        try:
+            body = response.json()
+            error_msg = body.get("error", {}).get("message", response.text)
+        except Exception:
+            error_msg = response.text
+
+        provider = self.provider_type
+
+        if status in (401, 403):
+            raise LLMAuthenticationError(
+                f"[{provider}] 认证失败: {error_msg}",
+                provider=provider,
+                status_code=status,
+            )
+        elif status == 429:
+            raise LLMRateLimitError(
+                f"[{provider}] 速率限制: {error_msg}",
+                provider=provider,
+                status_code=status,
+            )
+        elif status >= 500:
+            raise LLMError(
+                f"[{provider}] 服务端错误 ({status}): {error_msg}",
+                provider=provider,
+                status_code=status,
+            )
+        else:
+            raise LLMError(
+                f"[{provider}] 请求失败 ({status}): {error_msg}",
+                provider=provider,
+                status_code=status,
+            )
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type((LLMTimeoutError, LLMRateLimitError, httpx.TimeoutException)),
+        reraise=True,
+    )
     async def chat_completion(
         self,
         messages: list[Message],
@@ -36,7 +130,7 @@ class OpenAICompatibleProvider(LLMProvider):
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
 
-        payload = {
+        payload: dict = {
             "model": self.model_name,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "temperature": temperature,
@@ -46,15 +140,27 @@ class OpenAICompatibleProvider(LLMProvider):
         if response_format:
             payload["response_format"] = response_format
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
+        try:
+            response = await self._client.post(
                 f"{self.endpoint}/chat/completions",
                 headers=headers,
                 json=payload,
             )
-            response.raise_for_status()
-            data = response.json()
+        except httpx.TimeoutException as e:
+            raise LLMTimeoutError(
+                f"[{self.provider_type}] 请求超时 (>{self._timeout}s)",
+                provider=self.provider_type,
+            ) from e
+        except httpx.ConnectError as e:
+            raise LLMError(
+                f"[{self.provider_type}] 连接失败: {e}",
+                provider=self.provider_type,
+            ) from e
 
+        if response.status_code != 200:
+            self._handle_http_error(response)
+
+        data = response.json()
         choice = data["choices"][0]
         usage = data.get("usage", {})
 
