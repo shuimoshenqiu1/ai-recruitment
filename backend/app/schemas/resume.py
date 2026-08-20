@@ -44,3 +44,26 @@ class ResumeResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ResumeUploadResult(BaseModel):
+    """单个简历上传结果"""
+    resume_id: uuid.UUID
+    file_name: str
+    parse_status: str
+
+
+class BatchUploadFileResult(BaseModel):
+    """批量上传中单个文件的处理结果"""
+    file_name: str
+    success: bool
+    resume_id: uuid.UUID | None = None
+    error: str | None = None
+
+
+class BatchUploadResponse(BaseModel):
+    """批量上传响应"""
+    total: int = Field(description="提交总数")
+    success_count: int = Field(description="成功数量")
+    failed_count: int = Field(description="失败数量")
+    results: list[BatchUploadFileResult] = Field(description="逐文件结果")
