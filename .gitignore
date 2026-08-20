@@ -1,0 +1,78 @@
+# ============================================================
+# AI招聘匹配系统 - Git忽略规则
+# ============================================================
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# ---------- Node.js ----------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ---------- 构建产物 ----------
+frontend/dist/
+frontend/build/
+*.tsbuildinfo
+
+# ---------- 环境变量 ----------
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.test
+
+# ---------- Docker ----------
+docker-compose.override.yml
+
+# ---------- IDE ----------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ---------- 上传文件 ----------
+uploads/
+*.pdf
+*.docx
+*.doc
+
+# ---------- 日志 ----------
+logs/
+*.log
+
+# ---------- 数据库 ----------
+*.db
+*.sqlite3
+
+# ---------- 测试 ----------
+coverage/
+.nyc_output/
+
+# ---------- 系统 ----------
+*.pid
+*.seed
+*.pid.lock
