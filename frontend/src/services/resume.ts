@@ -37,5 +37,5 @@ export async function deleteResume(id: string): Promise<void> {
 
 /** 重新解析简历 */
 export async function reparseResume(id: string): Promise<void> {
-  return request(`/api/resumes/${id}/reparse`, { method: 'POST' });
+  return request(`/api/resumes/${id}/parse`, { method: 'POST' });
 }

@@ -40,9 +40,9 @@ const MatchingPage: React.FC = () => {
       setProgress(0);
 
       const task = await runMatching({
-        jobId: values.jobId,
-        resumeIds: values.resumeIds?.length ? values.resumeIds : undefined,
-        modelId: values.modelId,
+        job_id: values.jobId,
+        resume_ids: values.resumeIds?.length ? values.resumeIds : [],
+        llm_config_id: values.modelId,
       });
 
       message.success('匹配任务已提交');

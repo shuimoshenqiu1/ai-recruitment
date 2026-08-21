@@ -10,9 +10,8 @@ export async function login(params: API.LoginParams): Promise<API.LoginResult> {
   return result;
 }
 
-/** 用户登出 */
+/** 用户登出（JWT无状态，仅清除本地token） */
 export async function logout(): Promise<void> {
-  await request('/api/auth/logout', { method: 'POST' });
   removeToken();
 }
 
@@ -23,7 +22,7 @@ export async function getCurrentUser(): Promise<API.CurrentUser> {
 
 /** 注册 */
 export async function register(params: {
-  username: string;
+  name: string;
   email: string;
   password: string;
 }): Promise<API.LoginResult> {

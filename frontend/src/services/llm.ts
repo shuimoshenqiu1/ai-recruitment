@@ -3,56 +3,57 @@ import request from '@/utils/request';
 export interface LLMModel {
   id: string;
   name: string;
-  provider: 'openai' | 'azure' | 'local';
-  model: string;
-  apiKey?: string;
-  endpoint?: string;
-  isDefault: boolean;
-  maxTokens: number;
-  temperature: number;
-  createdAt: string;
+  provider_type: string;
+  endpoint: string;
+  api_key?: string;
+  model_name: string;
+  is_default: boolean;
+  is_active: boolean;
+  config?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LLMModelParams {
   name: string;
-  provider: 'openai' | 'azure' | 'local';
-  model: string;
-  apiKey?: string;
-  endpoint?: string;
-  isDefault?: boolean;
-  maxTokens?: number;
-  temperature?: number;
+  provider_type: string;
+  endpoint: string;
+  api_key?: string;
+  model_name: string;
+  is_default?: boolean;
+  is_active?: boolean;
+  config?: Record<string, any>;
 }
 
-/** 获取LLM模型列表 */
+/** 获取LLM配置列表 */
 export async function getLLMModels(): Promise<LLMModel[]> {
-  return request<LLMModel[]>('/api/llm/models', { method: 'GET' });
+  return request<LLMModel[]>('/api/llm-configs', { method: 'GET' });
 }
 
-/** 创建LLM模型配置 */
+/** 创建LLM配置 */
 export async function createLLMModel(params: LLMModelParams): Promise<LLMModel> {
-  return request<LLMModel>('/api/llm/models', {
+  return request<LLMModel>('/api/llm-configs', {
     method: 'POST',
     data: params,
   });
 }
 
-/** 更新LLM模型配置 */
+/** 更新LLM配置 */
 export async function updateLLMModel(id: string, params: Partial<LLMModelParams>): Promise<LLMModel> {
-  return request<LLMModel>(`/api/llm/models/${id}`, {
+  return request<LLMModel>(`/api/llm-configs/${id}`, {
     method: 'PUT',
     data: params,
   });
 }
 
-/** 删除LLM模型配置 */
+/** 删除LLM配置 */
 export async function deleteLLMModel(id: string): Promise<void> {
-  return request(`/api/llm/models/${id}`, { method: 'DELETE' });
+  return request(`/api/llm-configs/${id}`, { method: 'DELETE' });
 }
 
 /** 测试LLM连接 */
 export async function testLLMConnection(id: string): Promise<{ success: boolean; message: string }> {
-  return request<{ success: boolean; message: string }>(`/api/llm/models/${id}/test`, {
+  return request<{ success: boolean; message: string }>(`/api/llm-configs/${id}/test`, {
     method: 'POST',
   });
 }
