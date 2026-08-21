@@ -5,7 +5,6 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
-from openpyxl import Workbook
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -173,12 +172,12 @@ async def export_match_results(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    导出匹配结果为Excel。
+    导出匹配结果为增强版Excel（带颜色标识和汇总）。
     
     支持按分数和等级筛选后导出。
     """
     # 校验岗位所有权
-    await _check_job_access(payload.job_id, current_user, db)
+    job = await _check_job_access(payload.job_id, current_user, db)
 
     query = select(MatchResult).where(MatchResult.job_id == payload.job_id)
 
@@ -197,32 +196,11 @@ async def export_match_results(
             detail="没有符合条件的匹配结果",
         )
 
-    # 生成Excel
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "匹配结果"
+    # 使用增强版报告服务生成Excel
+    from app.services.report_service import ReportService
 
-    # 表头
-    headers = ["简历ID", "综合得分", "技能得分", "经验得分", "学历得分", "等级", "推荐意见", "模型"]
-    ws.append(headers)
-
-    # 数据行
-    for m in matches:
-        ws.append([
-            str(m.resume_id),
-            float(m.overall_score),
-            float(m.skill_score) if m.skill_score else None,
-            float(m.experience_score) if m.experience_score else None,
-            float(m.education_score) if m.education_score else None,
-            m.grade,
-            m.recommendation,
-            m.model_used,
-        ])
-
-    # 输出为流
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
+    report_service = ReportService()
+    output = report_service.generate_match_excel(matches=matches, job_title=job.title)
 
     filename = f"match_results_{payload.job_id}.xlsx"
     return StreamingResponse(

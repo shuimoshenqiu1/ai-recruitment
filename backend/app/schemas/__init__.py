@@ -13,6 +13,15 @@ from app.schemas.resume import (
 from app.schemas.job import JobCreate, JobRequirements, JobResponse, JobUpdate
 from app.schemas.matching import MatchDetailResponse, MatchRequest, MatchResultResponse
 from app.schemas.llm_config import LLMConfigCreate, LLMConfigResponse, LLMConfigUpdate
+from app.schemas.dashboard import (
+    DailyAvgScore,
+    DailyCount,
+    JobProgress,
+    MatchingStats,
+    OverviewStats,
+    ResumeStats,
+    ScoreRange,
+)
 
 __all__ = [
     "APIResponse",
@@ -39,4 +48,11 @@ __all__ = [
     "LLMConfigCreate",
     "LLMConfigUpdate",
     "LLMConfigResponse",
+    "OverviewStats",
+    "JobProgress",
+    "DailyCount",
+    "ResumeStats",
+    "ScoreRange",
+    "DailyAvgScore",
+    "MatchingStats",
 ]
