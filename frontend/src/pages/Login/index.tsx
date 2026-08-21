@@ -34,13 +34,13 @@ const LoginPage: React.FC = () => {
         onFinish={handleSubmit}
       >
         <ProFormText
-          name="username"
+          name="email"
           fieldProps={{
             size: 'large',
             prefix: <UserOutlined />,
           }}
-          placeholder="用户名"
-          rules={[{ required: true, message: '请输入用户名' }]}
+          placeholder="邮箱"
+          rules={[{ required: true, message: '请输入邮箱' }]}
         />
         <ProFormText.Password
           name="password"

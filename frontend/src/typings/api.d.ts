@@ -25,7 +25,7 @@ declare namespace API {
 
   /** 登录参数 */
   interface LoginParams {
-    username: string;
+    email: string;
     password: string;
   }
 
