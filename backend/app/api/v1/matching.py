@@ -26,6 +26,26 @@ from app.schemas.matching import (
 router = APIRouter()
 
 
+async def _check_job_access(
+    job_id: uuid.UUID, current_user: User, db: AsyncSession
+) -> Job:
+    """检查岗位存在性和用户访问权限（防止 IDOR）。
+
+    admin 和 hr_manager 角色可操作所有岗位，其他用户只能操作自己创建的岗位。
+
+    Raises:
+        HTTPException 404: 岗位不存在
+        HTTPException 403: 无权操作此岗位
+    """
+    result = await db.execute(select(Job).where(Job.id == job_id))
+    job = result.scalar_one_or_none()
+    if job is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="岗位不存在")
+    if current_user.role not in ("admin", "hr_manager") and job.created_by != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作此岗位")
+    return job
+
+
 @router.post("/execute", response_model=APIResponse, status_code=status.HTTP_202_ACCEPTED)
 async def execute_matching(
     payload: MatchRequest,
@@ -39,11 +59,8 @@ async def execute_matching(
     - 简历必须已完成解析
     - 提交后返回202，实际匹配由后台异步完成
     """
-    # 校验岗位存在
-    job_result = await db.execute(select(Job).where(Job.id == payload.job_id))
-    job = job_result.scalar_one_or_none()
-    if job is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="岗位不存在")
+    # 校验岗位存在 + 所有权
+    job = await _check_job_access(payload.job_id, current_user, db)
 
     if job.status != "published":
         raise HTTPException(
@@ -68,17 +85,19 @@ async def execute_matching(
             detail=f"以下简历未完成解析或不存在: {', '.join(invalid_ids)}",
         )
 
-    # TODO: 生产环境发送Celery异步匹配任务
-    # task = celery_app.send_task(
-    #     "tasks.execute_match",
-    #     args=[str(payload.job_id), [str(r) for r in payload.resume_ids]],
-    #     kwargs={"llm_config_id": str(payload.llm_config_id) if payload.llm_config_id else None},
-    # )
+    from app.tasks.matching_tasks import execute_match
+
+    task = execute_match.delay(
+        job_id=str(payload.job_id),
+        resume_ids=[str(r) for r in payload.resume_ids],
+        llm_config_id=str(payload.llm_config_id) if payload.llm_config_id else None,
+    )
 
     return APIResponse.success(
         data={
             "job_id": str(payload.job_id),
             "resume_count": len(payload.resume_ids),
+            "task_id": task.id,
             "status": "submitted",
         },
         message="匹配任务已提交，请稍后查看结果",
@@ -96,6 +115,9 @@ async def list_match_results(
     db: AsyncSession = Depends(get_db),
 ):
     """获取匹配结果列表（分页+筛选）"""
+    # 校验岗位所有权
+    await _check_job_access(job_id, current_user, db)
+
     query = select(MatchResult).where(MatchResult.job_id == job_id)
     count_query = select(func.count()).select_from(MatchResult).where(
         MatchResult.job_id == job_id
@@ -138,6 +160,9 @@ async def get_match_detail(
     if match is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="匹配结果不存在")
 
+    # 校验岗位所有权
+    await _check_job_access(match.job_id, current_user, db)
+
     return APIResponse.success(data=MatchDetailResponse.model_validate(match).model_dump())
 
 
@@ -152,6 +177,9 @@ async def export_match_results(
     
     支持按分数和等级筛选后导出。
     """
+    # 校验岗位所有权
+    await _check_job_access(payload.job_id, current_user, db)
+
     query = select(MatchResult).where(MatchResult.job_id == payload.job_id)
 
     if payload.min_score is not None:

@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,6 +12,13 @@ from app.core.database import Base
 
 class Resume(Base):
     __tablename__ = "resumes"
+    __table_args__ = (
+        Index("ix_resumes_uploaded_by", "uploaded_by"),
+        Index("ix_resumes_parse_status", "parse_status"),
+        Index("ix_resumes_created_at", "created_at"),
+        Index("ix_resumes_candidate_email", "candidate_email"),
+        Index("ix_resumes_is_deleted", "is_deleted"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

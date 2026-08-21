@@ -27,6 +27,7 @@ class MatchResultResponse(BaseModel):
     skill_score: Decimal | None = None
     experience_score: Decimal | None = None
     education_score: Decimal | None = None
+    soft_skill_score: Decimal | None = None
     grade: str | None = None
     recommendation: str | None = None
     model_used: str | None = None
@@ -44,6 +45,7 @@ class MatchDetailResponse(BaseModel):
     skill_score: Decimal | None = None
     experience_score: Decimal | None = None
     education_score: Decimal | None = None
+    soft_skill_score: Decimal | None = None
     grade: str | None = None
     recommendation: str | None = None
     details: dict | None = Field(default=None, description="LLM输出的详细分析结果")

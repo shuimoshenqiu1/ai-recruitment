@@ -35,6 +35,7 @@ celery_app.conf.update(
     # 任务路由
     task_routes={
         "app.tasks.resume_tasks.*": {"queue": "resume"},
+        "app.tasks.matching_tasks.*": {"queue": "matching"},
     },
 )
 
