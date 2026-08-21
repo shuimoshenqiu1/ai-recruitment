@@ -116,7 +116,32 @@ clean: ## 清理所有容器和数据卷 (⚠️ 删除数据)
 # ============================================================
 
 prod-build: ## 构建生产镜像
-	docker compose -f docker-compose.yml -f docker-compose.prod.yml build
+	docker compose -f docker-compose.prod.yml build
 
 prod-up: ## 启动生产环境
-	docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+	docker compose -f docker-compose.prod.yml up -d
+
+prod-down: ## 停止生产环境
+	docker compose -f docker-compose.prod.yml down
+
+prod-restart: ## 重启生产环境
+	docker compose -f docker-compose.prod.yml restart
+
+prod-logs: ## 查看生产日志 (follow)
+	docker compose -f docker-compose.prod.yml logs -f
+
+prod-ps: ## 查看生产服务状态
+	docker compose -f docker-compose.prod.yml ps
+
+prod-health: ## 检查生产服务健康状态
+	@echo "=== Service Health ==="
+	@docker compose -f docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}"
+	@echo ""
+	@echo "=== Backend Health ==="
+	@curl -sf http://localhost/api/v1/../health || echo "Backend: UNREACHABLE"
+	@echo ""
+
+prod-rollback: ## 回滚到上一版本 (需要先 docker tag 旧镜像)
+	@echo "⚠️  回滚操作 - 将重启所有服务到之前构建的镜像"
+	@read -p "确认回滚? [y/N] " confirm && [ "$$confirm" = "y" ] && \
+		docker compose -f docker-compose.prod.yml up -d --no-build || echo "已取消"

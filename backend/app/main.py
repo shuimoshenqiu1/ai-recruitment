@@ -46,5 +46,47 @@ app.include_router(api_v1_router, prefix="/api/v1")
 
 @app.get("/health")
 async def health_check():
-    """健康检查"""
-    return {"status": "ok", "version": "1.0.0"}
+    """存活检查 - 仅确认服务进程在运行"""
+    return {"status": "healthy", "version": "1.0.0"}
+
+
+@app.get("/health/ready")
+async def readiness_check():
+    """就绪检查 - 确认所有依赖（DB/Redis）可达"""
+    import redis.asyncio as aioredis
+    from sqlalchemy import text
+
+    from app.core.database import async_session_factory
+
+    checks = {}
+
+    # 检查 PostgreSQL
+    try:
+        async with async_session_factory() as session:
+            await session.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as e:
+        checks["database"] = f"error: {str(e)}"
+
+    # 检查 Redis
+    try:
+        r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+        await r.ping()
+        await r.aclose()
+        checks["redis"] = "ok"
+    except Exception as e:
+        checks["redis"] = f"error: {str(e)}"
+
+    all_ok = all(v == "ok" for v in checks.values())
+    status_code = 200 if all_ok else 503
+
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": "ready" if all_ok else "degraded",
+            "version": "1.0.0",
+            "checks": checks,
+        },
+    )

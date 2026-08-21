@@ -1,0 +1,20 @@
+# Backend Docker 构建排除
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+tests/
+*.md
+.github/
+uploads/
+.DS_Store
