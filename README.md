@@ -125,6 +125,7 @@ ai-recruitment/
 │   │   ├── tasks/           # Celery异步任务
 │   │   └── utils/           # 工具函数
 │   ├── migrations/          # 数据库迁移
+│   ├── tests/               # 集成测试 (pytest)
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
@@ -136,11 +137,14 @@ ai-recruitment/
 │   ├── Dockerfile
 │   └── package.json
 ├── nginx/                   # 反向代理配置
-├── docker-compose.yml       # 一键部署
+├── docker-compose.yml       # 开发环境部署
+├── docker-compose.prod.yml  # 生产环境部署
+├── .github/workflows/       # CI/CD (GitHub Actions)
 ├── Makefile                 # 常用命令
 └── docs/
     ├── PRD.md              # 产品需求文档
-    └── ARCHITECTURE.md     # 系统架构设计
+    ├── ARCHITECTURE.md     # 系统架构设计
+    └── DEPLOYMENT.md       # 生产部署指南
 ```
 
 ## 🚀 快速开始
@@ -158,13 +162,17 @@ cd ai-recruitment
 
 # 配置环境变量
 cp .env.example .env
-# 编辑 .env 填入你的 LLM API Key
+# 编辑 .env，至少填入一个 LLM 的 API Key（详见文件内注释）
+# 如果用本地 Ollama 则无需 API Key，只需确保 Ollama 已启动
 
 # 启动所有服务
 docker compose up -d
 
-# 查看日志
+# 等待服务启动（首次需要构建镜像，约2-5分钟）
 docker compose logs -f backend
+
+# 检查健康状态
+curl http://localhost:8000/health
 ```
 
 启动后访问：
@@ -252,26 +260,45 @@ curl -X POST http://localhost:8000/api/v1/llm-configs/ \
 | 简历 | POST /api/v1/resumes/{id}/parse | 重新解析 |
 | 岗位 | POST /api/v1/jobs/ | 创建岗位 |
 | 岗位 | GET /api/v1/jobs/ | 岗位列表 |
+| 岗位 | GET /api/v1/jobs/{id} | 岗位详情 |
 | 岗位 | PUT /api/v1/jobs/{id} | 编辑岗位 |
-| 匹配 | POST /api/v1/matching/run | 执行匹配 |
-| 匹配 | GET /api/v1/matching/results | 匹配结果 |
+| 岗位 | PATCH /api/v1/jobs/{id}/status | 变更状态 |
+| 岗位 | DELETE /api/v1/jobs/{id} | 删除岗位 |
+| 匹配 | POST /api/v1/matching/execute | 执行AI匹配 |
+| 匹配 | GET /api/v1/matching/results | 匹配结果列表 |
+| 匹配 | GET /api/v1/matching/results/{id} | 匹配详情 |
+| 匹配 | POST /api/v1/matching/export | 导出Excel |
+| 报告 | GET /api/v1/reports/match/{id}/report | 单份匹配报告 |
+| 报告 | POST /api/v1/reports/match/export | 增强Excel导出 |
+| 看板 | GET /api/v1/dashboard/overview | 总览数据 |
+| 看板 | GET /api/v1/dashboard/jobs/progress | 岗位招聘进度 |
+| 看板 | GET /api/v1/dashboard/resumes/stats | 简历统计 |
+| 看板 | GET /api/v1/dashboard/matching/stats | 匹配统计 |
 | LLM | GET /api/v1/llm-configs/ | 查看LLM配置 |
 | LLM | POST /api/v1/llm-configs/ | 新增/切换模型 |
+| 健康 | GET /health | 健康检查 |
+| 健康 | GET /health/ready | 就绪检查 |
 
 完整API文档启动服务后访问 http://localhost:8000/docs
 
 ## 🔒 安全特性
 
-- JWT认证 + 角色权限控制
-- 密码bcrypt哈希 + 复杂度校验
-- 登录频率限制（防暴力破解）
-- 文件上传双重校验（扩展名 + Magic bytes）
-- 路径遍历防护（realpath校验）
-- API Key脱敏（错误信息写DB/日志前过滤）
-- Prompt注入防护（边界标记 + 系统安全规则）
-- SECRET_KEY生产环境强制校验
+- JWT认证 + 角色权限控制（admin/hr_manager/recruiter/interviewer）
+- 密码bcrypt哈希 + 复杂度校验（大小写+数字+特殊字符）
+- 登录频率限制（5次/分钟/IP，防暴力破解）
+- 文件上传双重校验（扩展名 + Magic bytes内容检测）
+- 路径遍历防护（realpath校验限制在上传目录内）
+- API Key脱敏（错误信息写DB/日志前自动过滤）
+- Prompt注入防护（边界标记 + 系统安全规则声明）
+- IDOR防护（匹配/报告路由岗位所有权校验）
+- LIKE通配符转义（防搜索绕过）
+- 文件名注入防护（sanitize + RFC5987编码）
+- XSS防护（HTML报告数据属性转义）
+- SECRET_KEY生产环境强制校验（启动时验证）
 - SQL注入防护（SQLAlchemy参数化查询）
-- CORS配置
+- Celery任务超时保护（soft/hard time limit）
+- 自动重试分类（认证失败不重试，超时/限频重试）
+- CORS白名单配置
 
 ## 🗺️ 开发路线图
 
@@ -280,9 +307,9 @@ curl -X POST http://localhost:8000/api/v1/llm-configs/ \
 | W1 | 项目初始化 + Docker | ✅ 完成 |
 | W2 | 用户认证 + 简历上传 | ✅ 完成 |
 | W3 | 简历智能解析 + LLM适配层 | ✅ 完成 |
-| W4 | 岗位管理 + AI智能匹配 | 🔜 进行中 |
-| W5 | 报告导出 + 数据看板 | 📋 计划中 |
-| W6 | 集成测试 + 生产部署 | 📋 计划中 |
+| W4 | 岗位管理 + AI智能匹配 | ✅ 完成 |
+| W5 | 报告导出 + 数据看板 | ✅ 完成 |
+| W6 | 集成测试 + 生产部署 | ✅ 完成 |
 
 ## 📝 许可证
 
