@@ -234,3 +234,15 @@ class ZhipuProvider(OpenAICompatibleProvider):
             model_name=model_name,
             **kwargs,
         )
+
+
+class ModelScopeProvider(OpenAICompatibleProvider):
+    """魔搭社区（ModelScope）推理API — OpenAI兼容协议"""
+
+    def __init__(self, api_key: str, model_name: str = "Qwen/Qwen2.5-72B-Instruct", **kwargs):
+        super().__init__(
+            endpoint="https://api-inference.modelscope.cn/v1",
+            api_key=api_key,
+            model_name=model_name,
+            **kwargs,
+        )

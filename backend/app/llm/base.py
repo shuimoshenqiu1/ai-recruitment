@@ -18,6 +18,7 @@ class ProviderType(str, Enum):
     ANTHROPIC = "anthropic"
     ZHIPU = "zhipu"
     OLLAMA = "ollama"
+    MODELSCOPE = "modelscope"
 
 
 @dataclass

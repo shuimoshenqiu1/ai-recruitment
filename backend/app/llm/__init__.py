@@ -45,6 +45,7 @@ from app.llm.factory import LLMFactory
 from app.llm.ollama_adapter import OllamaProvider
 from app.llm.openai_compatible import (
     DeepSeekProvider,
+    ModelScopeProvider,
     MoonshotProvider,
     OpenAICompatibleProvider,
     OpenAIProvider,
@@ -70,6 +71,7 @@ __all__ = [
     "DeepSeekProvider",
     "MoonshotProvider",
     "ZhipuProvider",
+    "ModelScopeProvider",
     "ClaudeProvider",
     "OllamaProvider",
     # 工具函数

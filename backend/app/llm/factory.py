@@ -11,6 +11,7 @@ from app.llm.claude_adapter import ClaudeProvider
 from app.llm.ollama_adapter import OllamaProvider
 from app.llm.openai_compatible import (
     DeepSeekProvider,
+    ModelScopeProvider,
     MoonshotProvider,
     OpenAICompatibleProvider,
     OpenAIProvider,
@@ -84,6 +85,7 @@ LLMFactory.register(ProviderType.OPENAI, OpenAIProvider)
 LLMFactory.register(ProviderType.DEEPSEEK, DeepSeekProvider)
 LLMFactory.register(ProviderType.MOONSHOT, MoonshotProvider)
 LLMFactory.register(ProviderType.ZHIPU, ZhipuProvider)
+LLMFactory.register(ProviderType.MODELSCOPE, ModelScopeProvider)
 
 # Anthropic Claude
 LLMFactory.register(ProviderType.ANTHROPIC, ClaudeProvider)
