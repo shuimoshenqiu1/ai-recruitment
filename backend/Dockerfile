@@ -2,9 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# 系统依赖（LibreOffice用于DOC转换）
+# 系统依赖（LibreOffice用于DOC转换，libmagic用于文件类型检测）
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
+    libmagic1 \
     libreoffice-writer \
     && rm -rf /var/lib/apt/lists/*
 
