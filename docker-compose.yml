@@ -54,7 +54,6 @@ services:
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2}
     volumes:
-      - ./backend:/app
       - upload_data:/app/uploads
     depends_on:
       postgres:
@@ -85,7 +84,6 @@ services:
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2}
     volumes:
-      - ./backend:/app
       - upload_data:/app/uploads
     depends_on:
       postgres:
