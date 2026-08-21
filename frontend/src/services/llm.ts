@@ -27,12 +27,12 @@ export interface LLMModelParams {
 
 /** 获取LLM配置列表 */
 export async function getLLMModels(): Promise<LLMModel[]> {
-  return request<LLMModel[]>('/api/llm-configs', { method: 'GET' });
+  return request<LLMModel[]>('/api/v1/llm-configs', { method: 'GET' });
 }
 
 /** 创建LLM配置 */
 export async function createLLMModel(params: LLMModelParams): Promise<LLMModel> {
-  return request<LLMModel>('/api/llm-configs', {
+  return request<LLMModel>('/api/v1/llm-configs', {
     method: 'POST',
     data: params,
   });
@@ -40,7 +40,7 @@ export async function createLLMModel(params: LLMModelParams): Promise<LLMModel> 
 
 /** 更新LLM配置 */
 export async function updateLLMModel(id: string, params: Partial<LLMModelParams>): Promise<LLMModel> {
-  return request<LLMModel>(`/api/llm-configs/${id}`, {
+  return request<LLMModel>(`/api/v1/llm-configs/${id}`, {
     method: 'PUT',
     data: params,
   });
@@ -48,12 +48,12 @@ export async function updateLLMModel(id: string, params: Partial<LLMModelParams>
 
 /** 删除LLM配置 */
 export async function deleteLLMModel(id: string): Promise<void> {
-  return request(`/api/llm-configs/${id}`, { method: 'DELETE' });
+  return request(`/api/v1/llm-configs/${id}`, { method: 'DELETE' });
 }
 
 /** 测试LLM连接 */
 export async function testLLMConnection(id: string): Promise<{ success: boolean; message: string }> {
-  return request<{ success: boolean; message: string }>(`/api/llm-configs/${id}/test`, {
+  return request<{ success: boolean; message: string }>(`/api/v1/llm-configs/${id}/test`, {
     method: 'POST',
   });
 }

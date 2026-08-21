@@ -7,7 +7,7 @@ export async function getResumeList(params: {
   keyword?: string;
   status?: Resume.Status;
 }): Promise<API.PaginatedResponse<Resume.Item>> {
-  return request<API.PaginatedResponse<Resume.Item>>('/api/resumes', {
+  return request<API.PaginatedResponse<Resume.Item>>('/api/v1/resumes', {
     method: 'GET',
     params,
   });
@@ -15,7 +15,7 @@ export async function getResumeList(params: {
 
 /** 获取简历详情 */
 export async function getResumeDetail(id: string): Promise<Resume.Detail> {
-  return request<Resume.Detail>(`/api/resumes/${id}`, { method: 'GET' });
+  return request<Resume.Detail>(`/api/v1/resumes/${id}`, { method: 'GET' });
 }
 
 /** 上传简历（返回创建的简历ID） */
@@ -23,7 +23,7 @@ export async function uploadResume(file: File): Promise<{ id: string }> {
   const formData = new FormData();
   formData.append('file', file);
 
-  return request<{ id: string }>('/api/resumes/upload', {
+  return request<{ id: string }>('/api/v1/resumes/upload', {
     method: 'POST',
     data: formData,
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -32,10 +32,10 @@ export async function uploadResume(file: File): Promise<{ id: string }> {
 
 /** 删除简历 */
 export async function deleteResume(id: string): Promise<void> {
-  return request(`/api/resumes/${id}`, { method: 'DELETE' });
+  return request(`/api/v1/resumes/${id}`, { method: 'DELETE' });
 }
 
 /** 重新解析简历 */
 export async function reparseResume(id: string): Promise<void> {
-  return request(`/api/resumes/${id}/parse`, { method: 'POST' });
+  return request(`/api/v1/resumes/${id}/parse`, { method: 'POST' });
 }

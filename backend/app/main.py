@@ -26,7 +26,6 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
-    redirect_slashes=False,
 )
 
 # H-3: SlowAPI 限频异常处理

@@ -2,7 +2,7 @@ import request, { setToken, removeToken } from '@/utils/request';
 
 /** 用户登录 */
 export async function login(params: API.LoginParams): Promise<API.LoginResult> {
-  const result = await request<API.LoginResult>('/api/auth/login', {
+  const result = await request<API.LoginResult>('/api/v1/auth/login', {
     method: 'POST',
     data: params,
   });
@@ -17,7 +17,7 @@ export async function logout(): Promise<void> {
 
 /** 获取当前用户信息 */
 export async function getCurrentUser(): Promise<API.CurrentUser> {
-  return request<API.CurrentUser>('/api/auth/me', { method: 'GET' });
+  return request<API.CurrentUser>('/api/v1/auth/me', { method: 'GET' });
 }
 
 /** 注册 */
@@ -26,7 +26,7 @@ export async function register(params: {
   email: string;
   password: string;
 }): Promise<API.LoginResult> {
-  return request<API.LoginResult>('/api/auth/register', {
+  return request<API.LoginResult>('/api/v1/auth/register', {
     method: 'POST',
     data: params,
   });

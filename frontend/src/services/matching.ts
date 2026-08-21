@@ -2,7 +2,7 @@ import request from '@/utils/request';
 
 /** 发起匹配任务 */
 export async function runMatching(params: Matching.RunParams): Promise<Matching.Task> {
-  return request<Matching.Task>('/api/matching/execute', {
+  return request<Matching.Task>('/api/v1/matching/execute', {
     method: 'POST',
     data: params,
   });
@@ -16,7 +16,7 @@ export async function getMatchingResults(params: {
   minScore?: number;
   grade?: string;
 }): Promise<API.PaginatedResponse<Matching.ResultItem>> {
-  return request<API.PaginatedResponse<Matching.ResultItem>>('/api/matching/results', {
+  return request<API.PaginatedResponse<Matching.ResultItem>>('/api/v1/matching/results', {
     method: 'GET',
     params,
   });
@@ -24,7 +24,7 @@ export async function getMatchingResults(params: {
 
 /** 获取单个匹配结果详情 */
 export async function getMatchingResultDetail(id: string): Promise<Matching.ResultItem> {
-  return request<Matching.ResultItem>(`/api/matching/results/${id}`, { method: 'GET' });
+  return request<Matching.ResultItem>(`/api/v1/matching/results/${id}`, { method: 'GET' });
 }
 
 /** 导出匹配结果Excel */
@@ -33,7 +33,7 @@ export async function exportMatchingResults(params: {
   min_score?: number;
   grades?: string[];
 }): Promise<Blob> {
-  return request<Blob>('/api/matching/export', {
+  return request<Blob>('/api/v1/matching/export', {
     method: 'POST',
     data: params,
   });
